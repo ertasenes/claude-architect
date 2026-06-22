@@ -1,57 +1,52 @@
 import os
 from dotenv import load_dotenv
 from anthropic import Anthropic
+from datetime import datetime
 
 load_dotenv()
 client = Anthropic()
 
 
-def hesapla(islem, a, b):
-    """İki sayı üzerinde dört işlemden birini yapar."""
-    if islem == "topla":
+def calculate(operation, a, b):
+    """Performs one of four arithmetic operations on two numbers."""
+    if operation == "add":
         return a + b
-    elif islem == "cikar":
+    elif operation == "subtract":
         return a - b
-    elif islem == "carp":
+    elif operation == "multiply":
         return a * b
-    elif islem == "bol":
+    elif operation == "divide":
         return a / b
     else:
-        return "Bilinmeyen işlem"
+        return "Unknown operation"
 
-def saat_kac():
-    """Şu anki tarih ve saati döndürür."""
-    from datetime import datetime
+
+def get_current_time():
+    """Returns the current date and time."""
     return datetime.now().strftime("%d.%m.%Y %H:%M")
 
 
-hesap_araci = {
-    "name": "hesapla",
-    "description": "İki sayı üzerinde dört işlem (toplama, çıkarma, çarpma, bölme) yapar. Kesin aritmetik gerektiğinde kullan.",
+calculator_tool = {
+    "name": "calculate",
+    "description": "Performs arithmetic (add, subtract, multiply, divide) on two numbers. Use when exact calculation is needed.",
     "input_schema": {
         "type": "object",
         "properties": {
-            "islem": {
+            "operation": {
                 "type": "string",
-                "enum": ["topla", "cikar", "carp", "bol"],
-                "description": "Yapılacak işlem"
+                "enum": ["add", "subtract", "multiply", "divide"],
+                "description": "The operation to perform"
             },
-            "a": {
-                "type": "number",
-                "description": "Birinci sayı"
-            },
-            "b": {
-                "type": "number",
-                "description": "İkinci sayı"
-            }
+            "a": {"type": "number", "description": "First number"},
+            "b": {"type": "number", "description": "Second number"}
         },
-        "required": ["islem", "a", "b"]
+        "required": ["operation", "a", "b"]
     }
 }
 
-saat_araci = {
-    "name": "saat_kac",
-    "description": "Şu anki güncel tarih ve saati verir. Kullanıcı bugünün tarihini, günü, saati veya zamanı sorduğunda kullan.",
+time_tool = {
+    "name": "get_current_time",
+    "description": "Returns the current date and time. Use when the user asks about today's date, the day, the time, or anything time-related.",
     "input_schema": {
         "type": "object",
         "properties": {},
@@ -59,48 +54,48 @@ saat_araci = {
     }
 }
 
-soru = "256 ile 89'u çarp, sonra saat kaç olduğunu da söyle."
+question = "Multiply 256 by 89, then tell me the current time."
 
-mesajlar = [
-    {"role": "user", "content": soru}
+messages = [
+    {"role": "user", "content": question}
 ]
 
 while True:
-    cevap = client.messages.create(
+    response = client.messages.create(
         model="claude-haiku-4-5-20251001",
         max_tokens=1000,
-        tools=[hesap_araci, saat_araci],
-        messages=mesajlar
+        tools=[calculator_tool, time_tool],
+        messages=messages
     )
 
-    if cevap.stop_reason == "tool_use":
-        mesajlar.append({"role": "assistant", "content": cevap.content})
+    if response.stop_reason == "tool_use":
+        messages.append({"role": "assistant", "content": response.content})
 
-        for parca in cevap.content:
-            if parca.type == "tool_use":
-                print(f"[Claude aracı çağırdı: {parca.name}, girdiler: {parca.input}]")
+        for block in response.content:
+            if block.type == "tool_use":
+                print(f"[Claude called tool: {block.name}, input: {block.input}]")
 
-                if parca.name == "hesapla":
-                    arac_sonucu = hesapla(
-                        parca.input["islem"],
-                        parca.input["a"],
-                        parca.input["b"]
+                if block.name == "calculate":
+                    result = calculate(
+                        block.input["operation"],
+                        block.input["a"],
+                        block.input["b"]
                     )
-                elif parca.name == "saat_kac":
-                    arac_sonucu = saat_kac()
-                print(f"[Aracın sonucu: {arac_sonucu}]")
+                elif block.name == "get_current_time":
+                    result = get_current_time()
+                print(f"[Tool result: {result}]")
 
-                mesajlar.append({
+                messages.append({
                     "role": "user",
                     "content": [
                         {
                             "type": "tool_result",
-                            "tool_use_id": parca.id,
-                            "content": str(arac_sonucu)
+                            "tool_use_id": block.id,
+                            "content": str(result)
                         }
                     ]
                 })
     else:
-        print("\nClaude'un nihai cevabı:")
-        print(cevap.content[0].text)
+        print("\nClaude's final answer:")
+        print(response.content[0].text)
         break
