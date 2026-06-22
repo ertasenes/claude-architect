@@ -19,6 +19,11 @@ def hesapla(islem, a, b):
     else:
         return "Bilinmeyen işlem"
 
+def saat_kac():
+    """Şu anki tarih ve saati döndürür."""
+    from datetime import datetime
+    return datetime.now().strftime("%d.%m.%Y %H:%M")
+
 
 hesap_araci = {
     "name": "hesapla",
@@ -44,7 +49,17 @@ hesap_araci = {
     }
 }
 
-soru = "Şunu tam olarak hesapla: 4837 çarpı 2916 kaç eder?"
+saat_araci = {
+    "name": "saat_kac",
+    "description": "Şu anki güncel tarih ve saati verir. Kullanıcı bugünün tarihini, günü, saati veya zamanı sorduğunda kullan.",
+    "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+    }
+}
+
+soru = "256 ile 89'u çarp, sonra saat kaç olduğunu da söyle."
 
 mesajlar = [
     {"role": "user", "content": soru}
@@ -54,7 +69,7 @@ while True:
     cevap = client.messages.create(
         model="claude-haiku-4-5-20251001",
         max_tokens=1000,
-        tools=[hesap_araci],
+        tools=[hesap_araci, saat_araci],
         messages=mesajlar
     )
 
@@ -65,11 +80,14 @@ while True:
             if parca.type == "tool_use":
                 print(f"[Claude aracı çağırdı: {parca.name}, girdiler: {parca.input}]")
 
-                arac_sonucu = hesapla(
-                    parca.input["islem"],
-                    parca.input["a"],
-                    parca.input["b"]
-                )
+                if parca.name == "hesapla":
+                    arac_sonucu = hesapla(
+                        parca.input["islem"],
+                        parca.input["a"],
+                        parca.input["b"]
+                    )
+                elif parca.name == "saat_kac":
+                    arac_sonucu = saat_kac()
                 print(f"[Aracın sonucu: {arac_sonucu}]")
 
                 mesajlar.append({
