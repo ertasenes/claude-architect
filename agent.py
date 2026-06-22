@@ -26,7 +26,10 @@ def calculate(operation, a, b):
 def get_current_time():
     """Returns the current date and time."""
     return datetime.now().strftime("%d.%m.%Y %H:%M")
-
+    
+def get_weather(city):
+    """returns the current weather of the city as celsius"""
+    return f"{city}: 22c, sunny" 
 
 calculator_tool = {
     "name": "calculate",
@@ -56,7 +59,23 @@ time_tool = {
     }
 }
 
-question = "What is 100 divided by 0?"
+weather_tool = {
+    "name": "get_weather",
+    "description": "Returns the current weather of the city as a celsius. Use when user asks the weather",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "city": {
+                "type": "string",
+                "description": "city name"
+                }
+            },
+
+        "required":["city"]
+    }
+}
+
+question = "What is the weather in Istanbul right now" """get question depend on tools"""
 
 messages = [
     {"role": "user", "content": question}
@@ -66,7 +85,7 @@ while True:
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
         max_tokens=1000,
-        tools=[calculator_tool, time_tool],
+        tools=[calculator_tool, time_tool, weather_tool],
         messages=messages
     )
 
@@ -86,6 +105,8 @@ while True:
                         )
                     elif block.name == "get_current_time":
                         result = get_current_time()
+                    elif block.name == "get_weather":
+                        result = get_weather(block.input["city"])
                     else:
                         result = f"Error: unknown tool '{block.name}'"
                 except Exception as e:
