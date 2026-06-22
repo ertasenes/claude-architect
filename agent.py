@@ -16,6 +16,8 @@ def calculate(operation, a, b):
     elif operation == "multiply":
         return a * b
     elif operation == "divide":
+        if b == 0:
+            return "Error: cannot divide by zero"
         return a / b
     else:
         return "Unknown operation"
@@ -54,7 +56,7 @@ time_tool = {
     }
 }
 
-question = "Multiply 256 by 89, then tell me the current time."
+question = "What is 100 divided by 0?"
 
 messages = [
     {"role": "user", "content": question}
@@ -75,14 +77,19 @@ while True:
             if block.type == "tool_use":
                 print(f"[Claude called tool: {block.name}, input: {block.input}]")
 
-                if block.name == "calculate":
-                    result = calculate(
-                        block.input["operation"],
-                        block.input["a"],
-                        block.input["b"]
-                    )
-                elif block.name == "get_current_time":
-                    result = get_current_time()
+                try:
+                    if block.name == "calculate":
+                        result = calculate(
+                            block.input["operation"],
+                            block.input["a"],
+                            block.input["b"]
+                        )
+                    elif block.name == "get_current_time":
+                        result = get_current_time()
+                    else:
+                        result = f"Error: unknown tool '{block.name}'"
+                except Exception as e:
+                    result = f"Error while running tool: {e}"
                 print(f"[Tool result: {result}]")
 
                 messages.append({
