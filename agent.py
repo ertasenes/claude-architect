@@ -7,7 +7,7 @@ from datetime import datetime
 load_dotenv()
 client = Anthropic()
 
-question = "What is the weather in Istanbul right now" """get question depend on tools"""
+question = "İstanbul'da hava nasıl?" """get question depend on tools"""
 
 messages = [
     {"role": "user", "content": question}
@@ -16,14 +16,15 @@ messages = [
 tool_functions = {
     "calculate": tools.calculate,
     "get_current_time": tools.get_current_time,
-    "get_weather": tools.get_weather
+    "get_weather": tools.get_weather,
+    "get_customer": tools.get_customer
 }
 
 while True:
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
         max_tokens=1000,
-        tools=[tools.calculator_tool, tools.time_tool, tools.weather_tool],
+        tools=[tools.calculator_tool, tools.time_tool, tools.weather_tool, tools.customer_tool],
         messages=messages
     )
 
