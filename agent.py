@@ -13,6 +13,12 @@ messages = [
     {"role": "user", "content": question}
 ]
 
+tool_functions = {
+    "calculate": tools.calculate,
+    "get_current_time": tools.get_current_time,
+    "get_weather": tools.get_weather
+}
+
 while True:
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
@@ -35,12 +41,9 @@ while True:
                             block.input["a"],
                             block.input["b"]
                         )
-                    elif block.name == "get_current_time":
-                        result = tools.get_current_time()
-                    elif block.name == "get_weather":
-                        result = tools.get_weather(block.input["city"])
-                    else:
-                        result = f"Error: unknown tool '{block.name}'"
+                    tool_name = block.name
+                    result = tool_functions[tool_name](**block.input)
+                
                 except Exception as e:
                     result = f"Error while running tool: {e}"
                 print(f"[Tool result: {result}]")
@@ -53,7 +56,7 @@ while True:
                             "tool_use_id": block.id,
                             "content": str(result)
                         }
-                    ]
+]
                 })
     else:
         print("\nClaude's final answer:")
