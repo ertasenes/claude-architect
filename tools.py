@@ -38,6 +38,21 @@ def get_customer(customer_id):
     else:
         return "Customer not found"
 
+REFUND_LIMIT = 500
+
+def process_refund(order_id, amount):
+    """Processes a refund for an order, within the agent's authority limit."""
+    if amount > REFUND_LIMIT:
+        return {
+            "error_category": "permission",
+            "is_retryable": False,
+            "message": f"Refund amount {amount} exceeds the authority limit of {REFUND_LIMIT}. Requires human approval."
+        }
+    return {
+        "status": "success",
+        "message": f"Refund of {amount} for order {order_id} has been processed."
+    }
+
 calculator_tool = {
     "name": "calculate",
     "description": "Performs arithmetic (add, subtract, multiply, divide) on two numbers. Use when exact calculation is needed.",
@@ -94,5 +109,17 @@ customer_tool = {
             },
 
         "required":["customer_id"]
+    }
+}
+refund_tool = {
+    "name": "process_refund",
+    "description": "Processes a monetary refund for a specific order. This performs a real, irreversible financial action. Use only when the customer explicitly requests a refund and you have the order ID and amount. Refunds above the authority limit will require human approval.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "order_id": {"type": "string", "description": "the order to refund, e.g. O123"},
+            "amount": {"type": "number", "description": "refund amount"}
+        },
+        "required": ["order_id", "amount"]
     }
 }
