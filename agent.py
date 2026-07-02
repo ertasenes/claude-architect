@@ -7,7 +7,7 @@ from datetime import datetime
 load_dotenv()
 client = Anthropic()
 
-question = "O123 için 1000 TL iade yap, onaylıyorum, işlemi gerçekleştir." """get question depend on tools"""
+question = "O123 için 1000 TL iade yap, onaylıyorum, işlemi gerçekleştir."  # test question
 
 messages = [
     {"role": "user", "content": question}
@@ -18,14 +18,15 @@ tool_functions = {
     "get_current_time": tools.get_current_time,
     "get_weather": tools.get_weather,
     "get_customer": tools.get_customer,
-    "process_refund": tools.process_refund
+    "process_refund": tools.process_refund,
+    "escalate_to_human": tools.escalate_to_human
 }
 
 while True:
     response = client.messages.create(
         model="claude-haiku-4-5-20251001",
         max_tokens=1000,
-        tools=[tools.calculator_tool, tools.time_tool, tools.weather_tool, tools.customer_tool, tools.refund_tool],
+        tools=[tools.calculator_tool, tools.time_tool, tools.weather_tool, tools.customer_tool, tools.refund_tool, tools.escalate_tool],
         messages=messages
     )
 
@@ -35,20 +36,12 @@ while True:
         for block in response.content:
             if block.type == "tool_use":
                 print(f"[Claude called tool: {block.name}, input: {block.input}]")
-
                 try:
-                    if block.name == "calculate":
-                        result = tools.calculate(
-                            block.input["operation"],
-                            block.input["a"],
-                            block.input["b"]
-                        )
                     tool_name = block.name
                     result = tool_functions[tool_name](**block.input)
                 
                 except Exception as e:
                     result = f"Error while running tool: {e}"
-                print(f"[Tool result: {result}]")
 
                 messages.append({
                     "role": "user",

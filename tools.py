@@ -53,6 +53,13 @@ def process_refund(order_id, amount):
         "message": f"Refund of {amount} for order {order_id} has been processed."
     }
 
+def escalate_to_human(order_id, amount, reason):
+    """Escalates a request to a human agent when the agent cannot resolve it."""
+    return {
+        "status": "escalated",
+        "message": f"Escalated order {order_id} (amount: {amount}) to a human agent. Reason: {reason}"
+    }
+
 calculator_tool = {
     "name": "calculate",
     "description": "Performs arithmetic (add, subtract, multiply, divide) on two numbers. Use when exact calculation is needed.",
@@ -121,5 +128,18 @@ refund_tool = {
             "amount": {"type": "number", "description": "refund amount"}
         },
         "required": ["order_id", "amount"]
+    }
+}
+escalate_tool = {
+    "name": "escalate_to_human",
+    "description": "It is used when human approval is required. It is used when the issue remains unresolved, when authority is exceeded, or when a human is requested.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "order_id": {"type": "string", "description": "the order being escalated"},
+            "amount": {"type": "number", "description": "the amount involved"},
+            "reason": {"type": "string", "description": "why this is being escalated"}
+        },
+        "required": ["order_id", "amount", "reason"]
     }
 }
